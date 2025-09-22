@@ -8,8 +8,10 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import * as Speech from 'expo-speech';
+import Voice from '@react-native-voice/voice'; // Import the voice recognition module
 
 // Main application component
 const App = () => {
@@ -17,6 +19,7 @@ const App = () => {
   const [inputText, setInputText] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [recognizedText, setRecognizedText] = useState('');
   const scrollViewRef = useRef(null);
 
   // A very simple function to simulate a bot response.
@@ -53,6 +56,7 @@ const App = () => {
     };
     setMessages((prevMessages) => [...prevMessages, newMessage]);
     setInputText('');
+    setRecognizedText(''); // Clear recognized text after sending
     simulateBotResponse(text);
   };
 
@@ -67,19 +71,38 @@ const App = () => {
     });
   };
 
-  // A placeholder function for speech-to-text input
-  const handleSpeechInput = () => {
-    setIsListening(true);
-    // In a real Expo app, you would use a library like 'react-native-voice'
-    // or 'expo-speech-to-text' here to capture audio and convert it to text.
-    // Example: Voice.start('en-US');
-    // For this example, we will just simulate a result after a delay.
-    setTimeout(() => {
+  // Setup the voice recognition listeners
+  useEffect(() => {
+    Voice.onSpeechStart = () => setIsListening(true);
+    Voice.onSpeechEnd = () => setIsListening(false);
+    Voice.onSpeechResults = (event) => {
+      const recognized = event.value[0];
+      setInputText(recognized);
+      setRecognizedText(recognized);
+      handleSendMessage(recognized);
+    };
+    Voice.onSpeechError = (event) => {
+      console.error('Speech recognition error:', event.error);
       setIsListening(false);
-      const recognizedText = "Tell me about soil health."; // Simulated transcript
-      setInputText(recognizedText);
-      handleSendMessage(recognizedText);
-    }, 2000);
+    };
+
+    return () => {
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
+  }, []);
+
+  // Function to handle speech input
+  const handleSpeechInput = async () => {
+    if (isListening) {
+      await Voice.stop();
+      setIsListening(false);
+    } else {
+      try {
+        await Voice.start('en-US');
+      } catch (e) {
+        console.error('Failed to start voice recognition:', e);
+      }
+    }
   };
 
   // Scroll to the latest message
@@ -147,15 +170,18 @@ const App = () => {
           returnKeyType="send"
           onSubmitEditing={() => handleSendMessage(inputText)}
         />
+        {isListening ? (
+          <ActivityIndicator size="large" color="#3b82f6" style={styles.micButton} />
+        ) : (
+          <TouchableOpacity
+            style={isListening ? styles.listeningButton : styles.micButton}
+            onPress={handleSpeechInput}
+          >
+            <Text style={isListening ? styles.listeningText : styles.micText}>🎙️</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={styles.sendButton} onPress={() => handleSendMessage(inputText)}>
           <Text style={styles.sendButtonText}>➔</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={isListening ? styles.listeningButton : styles.micButton}
-          onPress={handleSpeechInput}
-          disabled={isListening}
-        >
-          <Text style={isListening ? styles.listeningText : styles.micText}>🎙️</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
