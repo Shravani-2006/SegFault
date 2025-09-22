@@ -9,20 +9,51 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  PermissionsAndroid,
 } from 'react-native';
 import * as Speech from 'expo-speech';
-import Voice from '@react-native-voice/voice'; // Import the voice recognition module
+import Voice from '@react-native-voice/voice';
 
-// Main application component
+// A simple component for displaying a single chat message bubble
+const MessageBubble = ({ message, handleSpeakText, isSpeaking }) => {
+  return (
+    <View
+      style={[
+        styles.messageContainer,
+        message.sender === 'user' ? styles.userMessageContainer : styles.botMessageContainer,
+      ]}
+    >
+      <View
+        style={[
+          styles.messageBubble,
+          message.sender === 'user' ? styles.userMessageBubble : styles.botMessageBubble,
+        ]}
+      >
+        <Text style={styles.messageText}>{message.text}</Text>
+        {message.sender === 'bot' && (
+          <TouchableOpacity onPress={() => handleSpeakText(message.text)} disabled={isSpeaking} style={styles.speakButton}>
+            <Text style={[styles.speakButtonText, isSpeaking && styles.pulsatingText]}>
+              <Text>🔊</Text>
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  );
+};
+
+// The main application component
 const App = () => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [recognizedText, setRecognizedText] = useState('');
+  const [hasPermission, setHasPermission] = useState(false);
+  const [isVoiceReady, setIsVoiceReady] = useState(false);
   const scrollViewRef = useRef(null);
+  const textInputRef = useRef(null); // Ref for the TextInput component
 
-  // A very simple function to simulate a bot response.
+  // Simulates a bot response to a user query
   const simulateBotResponse = (userQuery) => {
     const queryLower = userQuery.toLowerCase();
     let botResponse = "I'm sorry, I don't have information on that topic. Please ask about common farming practices, crop diseases, or soil health.";
@@ -42,28 +73,21 @@ const App = () => {
         ...prevMessages,
         { id: Date.now() + 1, text: botResponse, sender: 'bot' },
       ]);
-    }, 1000); // Simulate a network delay
+    }, 1000);
   };
 
-  // Handles sending a message
+  // Handles sending a text message
   const handleSendMessage = (text) => {
     if (!text.trim()) return;
-
-    const newMessage = {
-      id: Date.now(),
-      text,
-      sender: 'user',
-    };
+    const newMessage = { id: Date.now(), text, sender: 'user' };
     setMessages((prevMessages) => [...prevMessages, newMessage]);
     setInputText('');
-    setRecognizedText(''); // Clear recognized text after sending
     simulateBotResponse(text);
   };
 
-  // Handles text-to-speech for bot messages
+  // Handles text-to-speech for bot responses
   const handleSpeakText = async (text) => {
     if (isSpeaking) return;
-
     setIsSpeaking(true);
     await Speech.speak(text, {
       onDone: () => setIsSpeaking(false),
@@ -71,31 +95,77 @@ const App = () => {
     });
   };
 
-  // Setup the voice recognition listeners
+  // Handles the request for microphone permission
+  const requestMicrophonePermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+          {
+            title: 'Microphone Permission',
+            message: 'This app needs access to your microphone to enable voice input.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Initializes the voice recognition module and requests permission
   useEffect(() => {
-    Voice.onSpeechStart = () => setIsListening(true);
-    Voice.onSpeechEnd = () => setIsListening(false);
-    Voice.onSpeechResults = (event) => {
-      const recognized = event.value[0];
-      setInputText(recognized);
-      setRecognizedText(recognized);
-      handleSendMessage(recognized);
+    const initVoice = async () => {
+      const granted = await requestMicrophonePermission();
+      setHasPermission(granted);
+
+      if (granted) {
+        Voice.onSpeechStart = () => {
+          setIsListening(true);
+          setInputText('Listening...');
+        };
+        Voice.onSpeechEnd = () => setIsListening(false);
+        Voice.onSpeechResults = (event) => {
+          const recognized = event.value[0];
+          setInputText(recognized);
+          handleSendMessage(recognized);
+        };
+        Voice.onSpeechError = (event) => {
+          console.error('Speech recognition error:', event.error);
+          setIsListening(false);
+          setInputText('');
+        };
+      }
+      setIsVoiceReady(true);
     };
-    Voice.onSpeechError = (event) => {
-      console.error('Speech recognition error:', event.error);
-      setIsListening(false);
-    };
+
+    initVoice();
 
     return () => {
       Voice.destroy().then(Voice.removeAllListeners);
     };
   }, []);
 
-  // Function to handle speech input
+  // Handles the voice input button press
   const handleSpeechInput = async () => {
+    if (!hasPermission) {
+      console.log('Microphone permission denied.');
+      return;
+    }
+    
+    // Check if the Voice module is initialized before attempting to use it.
+    if (!Voice || !Voice.start) {
+      console.error('Voice module or its start method is not available. Please ensure the library is correctly linked and configured.');
+      return;
+    }
+
     if (isListening) {
       await Voice.stop();
-      setIsListening(false);
     } else {
       try {
         await Voice.start('en-US');
@@ -105,28 +175,31 @@ const App = () => {
     }
   };
 
-  // Scroll to the latest message
+  // Scrolls to the bottom of the chat view when a new message is added
   useEffect(() => {
     if (scrollViewRef.current) {
       scrollViewRef.current.scrollToEnd({ animated: true });
     }
   }, [messages]);
 
+  // Automatically focus on the text input when the component mounts
+  useEffect(() => {
+    textInputRef.current.focus();
+  }, []);
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       <View style={styles.header}>
         <Text style={styles.headerEmoji}>🌾</Text>
         <Text style={styles.headerText}>Farmer's Assistant</Text>
       </View>
-
       <ScrollView
         ref={scrollViewRef}
         style={styles.chatArea}
-        contentContainerStyle={styles.chatContentContainer}
+        contentContainerStyle={[styles.chatContentContainer, { flexGrow: 1, justifyContent: 'flex-end' }]}
       >
         {messages.length === 0 && (
           <Text style={styles.initialMessage}>
@@ -134,52 +207,34 @@ const App = () => {
           </Text>
         )}
         {messages.map((message) => (
-          <View
-            key={message.id}
-            style={[
-              styles.messageContainer,
-              message.sender === 'user' ? styles.userMessageContainer : styles.botMessageContainer,
-            ]}
-          >
-            <View
-              style={[
-                styles.messageBubble,
-                message.sender === 'user' ? styles.userMessageBubble : styles.botMessageBubble,
-              ]}
-            >
-              <Text style={styles.messageText}>{message.text}</Text>
-              {message.sender === 'bot' && (
-                <TouchableOpacity onPress={() => handleSpeakText(message.text)} disabled={isSpeaking} style={styles.speakButton}>
-                  <Text style={[styles.speakButtonText, isSpeaking && styles.pulsatingText]}>
-                    <Text>🔊</Text>
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
+          <MessageBubble key={message.id} message={message} handleSpeakText={handleSpeakText} isSpeaking={isSpeaking} />
         ))}
       </ScrollView>
-
       <View style={styles.inputArea}>
+        {isListening && <Text style={styles.listeningIndicator}>Listening...</Text>}
         <TextInput
+          ref={textInputRef} // Ref added here
           style={styles.textInput}
           value={inputText}
           onChangeText={setInputText}
-          placeholder={isListening ? 'Listening...' : 'Type your question...'}
+          placeholder={isListening ? '...' : 'Type your question...'}
           editable={!isListening}
           returnKeyType="send"
           onSubmitEditing={() => handleSendMessage(inputText)}
         />
-        {isListening ? (
-          <ActivityIndicator size="large" color="#3b82f6" style={styles.micButton} />
-        ) : (
-          <TouchableOpacity
-            style={isListening ? styles.listeningButton : styles.micButton}
-            onPress={handleSpeechInput}
-          >
-            <Text style={isListening ? styles.listeningText : styles.micText}>🎙️</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={[styles.micButton, isListening && styles.micListening]}
+          onPress={handleSpeechInput}
+          disabled={!isVoiceReady}
+        >
+          {!isVoiceReady ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : isListening ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.micText}>🎙️</Text>
+          )}
+        </TouchableOpacity>
         <TouchableOpacity style={styles.sendButton} onPress={() => handleSendMessage(inputText)}>
           <Text style={styles.sendButtonText}>➔</Text>
         </TouchableOpacity>
@@ -275,6 +330,13 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
   },
+  listeningIndicator: {
+    position: 'absolute',
+    top: 0,
+    left: 15,
+    fontSize: 12,
+    color: '#ef4444',
+  },
   textInput: {
     flex: 1,
     borderWidth: 1,
@@ -291,6 +353,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
+    marginLeft: 8,
   },
   sendButtonText: {
     color: '#fff',
@@ -304,21 +367,11 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
   },
-  listeningButton: {
+  micListening: {
     backgroundColor: '#ef4444',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
   },
   micText: {
-    fontSize: 20,
-  },
-  listeningText: {
     fontSize: 20,
   },
 });
