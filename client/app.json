@@ -34,14 +34,14 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      [
-        "@jamsch/expo-speech-recognition",
-        {
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone.",
-          "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to recognize speech."
-        }
-      ]
-    ]
+    // "plugins": [
+    //   [
+    //     "@jamsch/expo-speech-recognition",
+    //     {
+    //       "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone.",
+    //       "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to recognize speech."
+    //     }
+    //   ]
+    // ]
   }
 }
