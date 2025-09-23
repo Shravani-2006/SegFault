@@ -34,14 +34,10 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    // "plugins": [
-    //   [
-    //     "@jamsch/expo-speech-recognition",
-    //     {
-    //       "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone.",
-    //       "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to recognize speech."
-    //     }
-    //   ]
-    // ]
+    "extra": {
+      "eas": {
+        "projectId": "8d9c19ba-5f5b-42d1-91f8-fd87c1a37051"
+      }
+    }
   }
 }
