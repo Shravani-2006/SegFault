@@ -3,14 +3,14 @@ import { StyleSheet, View, Text, SafeAreaView, ScrollView, TouchableOpacity, Ani
 import { FontAwesome5 } from '@expo/vector-icons';
 
 // Import data and translations
-import { translations } from './components/translations';
-import { initialTasks, initialAlerts, initialCrops, calendarEvents } from './components/data';
+import { translations } from './translations';
+import { initialTasks, initialAlerts, initialCrops, calendarEvents } from './data';
 
 // Import components
 import NavItem from './components/NavItem';
 import Alerts from './components/Alerts';
 import DailyTasks from './components/DailyTasks';
-import Chatbot from './components/ChatBotV2';
+import Chatbot from './components/Chatbot';
 import Recommendations from './components/Recommendations';
 import MarketPrice from './components/MarketPrice';
 import Crops from './components/Crops';
