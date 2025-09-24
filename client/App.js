@@ -10,11 +10,12 @@ import { initialTasks, initialAlerts, initialCrops, calendarEvents } from './com
 import NavItem from './components/NavItem';
 import Alerts from './components/Alerts';
 import DailyTasks from './components/DailyTasks';
-import Chatbot from './components/ChatBotV2';
-import Recommendations from './components/Recommendations';
+import Chatbot from './components/Chatbot';
+// import Recommendations from './components/Recommendations';
 import MarketPrice from './components/MarketPrice';
 import Crops from './components/Crops';
 import Calendar from './components/Calendar';
+import Weather from './components/Weather';
 // import AssistantModal from './components/AssistantModal';
 
 const App = () => {
@@ -108,6 +109,7 @@ const App = () => {
 
   const renderDashboard = () => (
     <>
+      <Weather t={t} styles={styles} />
       <Alerts
         id="alerts"
         alerts={alerts}
@@ -128,20 +130,13 @@ const App = () => {
         highlightedBlockId={highlightedBlockId}
         pulseAnim={pulseAnim}
       />
-      <Chatbot
-        id="chatbot"
-        t={t}
-        styles={styles}
-        highlightedBlockId={highlightedBlockId}
-        pulseAnim={pulseAnim}
-      />
-      <Recommendations
+      {/* <Recommendations
         id="recommendations"
         t={t}
         styles={styles}
         highlightedBlockId={highlightedBlockId}
         pulseAnim={pulseAnim}
-      />
+      /> */}
       <MarketPrice
         id="market-price"
         t={t}
@@ -154,49 +149,60 @@ const App = () => {
 
   const renderPage = () => {
     switch (activePage) {
-      case 'manage-crops':
-        return <Crops crops={initialCrops} t={t} translateText={translateText} styles={styles} pulseAnim={pulseAnim} />;
-      case 'calendar':
-        return <Calendar calendarEvents={calendarEvents} t={t} translateText={translateText} currentDate={currentDate} setCurrentDate={setCurrentDate} styles={styles} pulseAnim={pulseAnim}/>;
-      case 'dashboard':
-      default:
-        return (
-          <>
-            <Text style={styles.pageTitle}>{t.welcome}</Text>
-            {renderDashboard()}
-          </>
-        );
-    }
-  };
+        case 'manage-crops':
+            return <Crops crops={initialCrops} t={t} translateText={translateText} styles={styles} pulseAnim={pulseAnim} />;
+        case 'calendar':
+            return <Calendar calendarEvents={calendarEvents} t={t} translateText={translateText} currentDate={currentDate} setCurrentDate={setCurrentDate} styles={styles} pulseAnim={pulseAnim} />;
+        case 'chatbot':
+            // Render Chatbot directly outside the ScrollView to fill the page
+            return <Chatbot t={t} />;
+        case 'dashboard':
+        default:
+            return (
+                // Wrap dashboard content in a Fragment
+                <>
+                    <Text style={styles.pageTitle}>{t.welcome}</Text>
+                    {renderDashboard()}
+                </>
+            );
+    };
+};
 
-  return (
+return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerTitleContainer}>
-            <FontAwesome5 name="tractor" size={24} color="white" />
-            <Text style={styles.headerTitle}>Krishi Sakhi</Text>
-          </View>
-          <View style={styles.languageSwitcher}>
-            <TouchableOpacity onPress={() => setLanguage(language === 'en' ? 'ml' : 'en')}>
-              <Text style={styles.languageText}>{language === 'en' ? 'English' : 'മലയാളം'}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <View style={styles.container}>
+            {/* Header */}
+            <View style={styles.header}>
+                <View style={styles.headerTitleContainer}>
+                    <FontAwesome5 name="tractor" size={24} color="white" />
+                    <Text style={styles.headerTitle}>Krishi Sakhi</Text>
+                </View>
+                <View style={styles.languageSwitcher}>
+                    <TouchableOpacity onPress={() => setLanguage(language === 'en' ? 'ml' : 'en')}>
+                        <Text style={styles.languageText}>{language === 'en' ? 'English' : 'മലയാളം'}</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
 
-        {/* Main content area */}
-        <ScrollView style={styles.mainContent} contentContainerStyle={styles.pageContainer}>
-          {renderPage()}
-        </ScrollView>
+            {/* Main content area */}
+            {/* Conditional rendering of ScrollView for pages that need it */}
+            {activePage !== 'chatbot' ? (
+                <ScrollView style={styles.mainContent} contentContainerStyle={styles.pageContainer}>
+                    {renderPage()}
+                </ScrollView>
+            ) : (
+                // Render chatbot here to take up the full space
+                <View style={{ flex: 1 }}>{renderPage()}</View>
+            )}
 
-        {/* Footer Navigation */}
-        <View style={styles.footer}>
-          <NavItem icon="home" text={t.dashboard} onPress={() => setActivePage('dashboard')} isActive={activePage === 'dashboard'} styles={styles} />
-          <NavItem icon="seedling" text={t.manageCrops} onPress={() => setActivePage('manage-crops')} isActive={activePage === 'manage-crops'} styles={styles} />
-          <NavItem icon="calendar-alt" text={t.calendar} onPress={() => setActivePage('calendar')} isActive={activePage === 'calendar'} styles={styles} />
-        </View>
-
+            {/* Footer Navigation */}
+            <View style={styles.footer}>
+                <NavItem icon="home" text={t.dashboard} onPress={() => setActivePage('dashboard')} isActive={activePage === 'dashboard'} styles={styles} />
+                <NavItem icon="seedling" text={t.manageCrops} onPress={() => setActivePage('manage-crops')} isActive={activePage === 'manage-crops'} styles={styles} />
+                <NavItem icon="comment-dots" text={t.chatbot} onPress={() => setActivePage('chatbot')} isActive={activePage === 'chatbot'} styles={styles} />
+                <NavItem icon="calendar-alt" text={t.calendar} onPress={() => setActivePage('calendar')} isActive={activePage === 'calendar'} styles={styles} />
+            </View>
+);
         {/* Floating AI Assistant button */}
         {/* <TouchableOpacity onPress={startTour} style={styles.aiButton}>
           <FontAwesome5 name="robot" size={30} color="white" />
@@ -218,8 +224,7 @@ const App = () => {
 };
 
 // Main stylesheet for the application
-
-export const styles = StyleSheet.create({
+const styles = StyleSheet.create({
   /* Layout */
   safeArea: {
     flex: 1,
@@ -442,6 +447,27 @@ export const styles = StyleSheet.create({
   recommendationText: {
     color: '#333',
   },
+  weatherItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  weatherIcon: {
+    fontSize: 40,
+    marginRight: 16,
+  },
+  weatherText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  weatherLabel: {
+    fontSize: 14,
+    color: '#4b5563',
+  },
+  errorText: {
+    color: '#ef4444',
+    textAlign: 'center',
+  },
 
   /* Crops */
   cropItem: {
@@ -512,7 +538,7 @@ export const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: '#059669',
     position: 'absolute',
-    bottom: 4,
+    bottom: 0,
   },
   calendarDayEmpty: {
     width: '14.28%',

@@ -10,10 +10,10 @@ import {
   Platform,
   ActivityIndicator,
   PermissionsAndroid,
+  SafeAreaView,
 } from 'react-native';
 import * as Speech from 'expo-speech';
 import Voice from '@react-native-voice/voice';
-
 // A simple component for displaying a single chat message bubble
 const MessageBubble = ({ message, handleSpeakText, isSpeaking }) => {
   return (
@@ -43,7 +43,7 @@ const MessageBubble = ({ message, handleSpeakText, isSpeaking }) => {
 };
 
 // The main application component
-const App = () => {
+const Chatbot = ({ t }) => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -56,16 +56,16 @@ const App = () => {
   // Simulates a bot response to a user query
   const simulateBotResponse = (userQuery) => {
     const queryLower = userQuery.toLowerCase();
-    let botResponse = "I'm sorry, I don't have information on that topic. Please ask about common farming practices, crop diseases, or soil health.";
+    let botResponse = t.chat.defaultResponse;
 
     if (queryLower.includes('weather') || queryLower.includes('forecast')) {
-      botResponse = "The forecast for this week looks promising with moderate rainfall. It's an excellent time for planting and irrigation. Remember to check local weather reports for the most accurate data.";
+      botResponse = t.chat.weatherResponse;
     } else if (queryLower.includes('fertilizer') || queryLower.includes('nutrients')) {
-      botResponse = "For corn crops, a balanced NPK fertilizer is essential, especially during the vegetative stage. A soil test will give you the most accurate nutrient needs for your specific field.";
+      botResponse = t.chat.fertilizerResponse;
     } else if (queryLower.includes('pests') || queryLower.includes('insects')) {
-      botResponse = "Common pests like the corn earworm can be managed with integrated pest management (IPM) strategies. Consider using beneficial insects or targeted, low-impact pesticides.";
+      botResponse = t.chat.pestsResponse;
     } else if (queryLower.includes('soil health') || queryLower.includes('ph')) {
-      botResponse = "Improving soil health is key to a successful harvest. Try adding organic matter like compost, practicing no-till farming, and using cover crops. Ideal soil pH is between 6.0 and 7.0 for most crops.";
+      botResponse = t.chat.soilHealthResponse;
     }
 
     setTimeout(() => {
@@ -188,88 +188,69 @@ const App = () => {
   }, []);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={styles.header}>
-        <Text style={styles.headerEmoji}>🌾</Text>
-        <Text style={styles.headerText}>Farmer's Assistant</Text>
-      </View>
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.chatArea}
-        contentContainerStyle={[styles.chatContentContainer, { flexGrow: 1, justifyContent: 'flex-end' }]}
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {messages.length === 0 && (
-          <Text style={styles.initialMessage}>
-            Hi there! I am your AI farming assistant. Ask me anything about crops, soil, pests, or weather.
-          </Text>
-        )}
-        {messages.map((message) => (
-          <MessageBubble key={message.id} message={message} handleSpeakText={handleSpeakText} isSpeaking={isSpeaking} />
-        ))}
-      </ScrollView>
-      <View style={styles.inputArea}>
-        {isListening && <Text style={styles.listeningIndicator}>Listening...</Text>}
-        <TextInput
-          ref={textInputRef} // Ref added here
-          style={styles.textInput}
-          value={inputText}
-          onChangeText={setInputText}
-          placeholder={isListening ? '...' : 'Type your question...'}
-          editable={!isListening}
-          returnKeyType="send"
-          onSubmitEditing={() => handleSendMessage(inputText)}
-        />
-        <TouchableOpacity
-          style={[styles.micButton, isListening && styles.micListening]}
-          onPress={handleSpeechInput}
-          disabled={!isVoiceReady}
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.chatArea}
+          contentContainerStyle={styles.chatContentContainer}
         >
-          {!isVoiceReady ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : isListening ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.micText}>🎙️</Text>
+          {messages.length === 0 && (
+            <Text style={styles.initialMessage}>
+              {t.chat.welcomeMessage}
+            </Text>
           )}
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.sendButton} onPress={() => handleSendMessage(inputText)}>
-          <Text style={styles.sendButtonText}>➔</Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+          {messages.map((message) => (
+            <MessageBubble key={message.id} message={message} handleSpeakText={handleSpeakText} isSpeaking={isSpeaking} />
+          ))}
+        </ScrollView>
+
+        <View style={styles.inputArea}>
+          <TouchableOpacity
+            style={[styles.micButton, isListening && styles.micListening]}
+            onPress={handleSpeechInput}
+            disabled={!isVoiceReady}
+          >
+            {!isVoiceReady ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : isListening ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.micText}>🎙️</Text>
+            )}
+          </TouchableOpacity>
+          <TextInput
+            ref={textInputRef}
+            style={styles.textInput}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder={isListening ? 'Listening...' : t.chat.inputPlaceholder}
+            editable={!isListening}
+            onSubmitEditing={() => handleSendMessage(inputText)}
+          />
+          <TouchableOpacity
+            style={styles.sendButton}
+            onPress={() => handleSendMessage(inputText)}
+          >
+            <Text style={styles.sendButtonText}>➔</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f0fdf4',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#166534',
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    paddingTop: 48,
-    borderBottomRightRadius: 20,
-    borderBottomLeftRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  headerEmoji: {
-    fontSize: 24,
-    marginRight: 8,
-  },
-  headerText: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 'bold',
+    backgroundColor: '#f0fdf4',
   },
   chatArea: {
     flex: 1,
@@ -277,12 +258,22 @@ const styles = StyleSheet.create({
   },
   chatContentContainer: {
     paddingBottom: 20,
+    flexGrow: 1, // Allows the content to grow and push to the bottom
+    justifyContent: 'flex-end', // Aligns content to the bottom
   },
   initialMessage: {
     textAlign: 'center',
-    color: '#71717a',
+    color: '#4b5563',
     fontStyle: 'italic',
     padding: 20,
+    marginTop: 20,
+    borderRadius: 16,
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   messageContainer: {
     flexDirection: 'row',
@@ -306,18 +297,24 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   botMessageBubble: {
-    backgroundColor: '#e5e7eb',
+    backgroundColor: 'white',
     borderBottomLeftRadius: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   messageText: {
     fontSize: 16,
+    color: '#333',
   },
   speakButton: {
     marginLeft: 8,
   },
   speakButtonText: {
     fontSize: 20,
-    color: '#4b5563',
+    color: '#047857',
   },
   pulsatingText: {
     opacity: 0.5,
@@ -326,28 +323,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  listeningIndicator: {
-    position: 'absolute',
-    top: 0,
-    left: 15,
-    fontSize: 12,
-    color: '#ef4444',
+    backgroundColor: 'transparent',
+    // The following styles were removed as KeyboardAvoidingView handles them
+    // position: 'absolute',
+    // bottom: 0,
+    // left: 0,
+    // right: 0,
   },
   textInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 24,
-    paddingVertical: 10,
+    borderColor: '#d1d5db',
+    borderRadius: 25,
+    paddingVertical: 12,
     paddingHorizontal: 16,
     marginRight: 8,
+    backgroundColor: 'white',
   },
   sendButton: {
-    backgroundColor: '#16a34a',
+    backgroundColor: '#047857',
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -361,12 +355,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   micButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#22c55e',
     width: 44,
     height: 44,
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 8,
   },
   micListening: {
     backgroundColor: '#ef4444',
@@ -376,4 +371,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default App;
+export default Chatbot;
