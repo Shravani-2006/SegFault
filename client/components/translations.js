@@ -52,7 +52,18 @@ export const translations = {
         { text: "These are AI-powered recommendations tailored to your specific farm data. I will give you smart tips on what to do next.", title: "AI Recommendations", highlightId: "recommendations" },
         { text: "Check here for real-time market prices of key crops to help you make informed decisions.", title: "Market Price", highlightId: "market-price" },
         { text: "That's the end of the tour! I'm here to help whenever you need me. Just tap my icon again.", title: "Tour Complete", highlightId: null },
-    ]
+    ],
+    chatbot: "AI Chatbot", // For the NavItem text
+    chatbotTitle: "AI Farmer's Assistant",
+    chat: {
+      welcomeMessage: "Hi there! I am your AI farming assistant. Ask me anything about crops, soil, pests, or weather.",
+      inputPlaceholder: "Type your question...",
+      defaultResponse: "I'm sorry, I don't have information on that topic. Please ask about common farming practices, crop diseases, or soil health.",
+      weatherResponse: "The forecast for this week looks promising with moderate rainfall. It's an excellent time for planting and irrigation. Remember to check local weather reports for the most accurate data.",
+      fertilizerResponse: "For corn crops, a balanced NPK fertilizer is essential, especially during the vegetative stage. A soil test will give you the most accurate nutrient needs for your specific field.",
+      pestsResponse: "Common pests like the corn earworm can be managed with integrated pest management (IPM) strategies. Consider using beneficial insects or targeted, low-impact pesticides.",
+      soilHealthResponse: "Improving soil health is key to a successful harvest. Try adding organic matter like compost, practicing no-till farming, and using cover crops. Ideal soil pH is between 6.0 and 7.0 for most crops.",
+    },
   },
   ml: {
     dashboard: "ഹോം",
@@ -106,6 +117,17 @@ export const translations = {
         { text: "ഇത് നിങ്ങളുടെ കൃഷിയിടത്തിലെ വിവരങ്ങൾക്കനുസരിച്ച് AI നൽകുന്ന ശുപാർശകളാണ്. അടുത്തതായി എന്ത് ചെയ്യണം എന്നതിനെക്കുറിച്ച് ഞാൻ നിങ്ങൾക്ക് മികച്ച നുറുങ്ങുകൾ നൽകും.", title: "AI ശുപാർശകൾ", highlightId: "recommendations" },
         { text: "കൃത്യമായ തീരുമാനങ്ങൾ എടുക്കാൻ പ്രധാന വിളകളുടെ തത്സമയ മാർക്കറ്റ് വിലകൾ ഇവിടെ പരിശോധിക്കുക.", title: "മാർക്കറ്റ് വില", highlightId: "market-price" },
         { text: "ടൂർ ഇവിടെ അവസാനിക്കുന്നു! നിങ്ങൾക്ക് ആവശ്യമുള്ളപ്പോൾ ഞാൻ ഇവിടെ ഉണ്ടാകും. എന്റെ ഐക്കണിൽ വീണ്ടും ടാപ്പുചെയ്യുക.", title: "ടൂർ പൂർത്തിയായി", highlightId: null },
-    ]
+    ],
+    chatbot: "AI ചാറ്റ്ബോട്ട്", // For the NavItem text
+    chatbotTitle: "കർഷകരുടെ AI സഹായി",
+    chat: {
+      welcomeMessage: "ഹായ്! ഞാൻ നിങ്ങളുടെ AI കൃഷി സഹായിയാണ്. വിളകൾ, മണ്ണ്, കീടങ്ങൾ, അല്ലെങ്കിൽ കാലാവസ്ഥ എന്നിവയെക്കുറിച്ച് എന്തും ചോദിക്കാം.",
+      inputPlaceholder: "നിങ്ങളുടെ ചോദ്യം ടൈപ്പ് ചെയ്യുക...",
+      defaultResponse: "എനിക്ക് ആ വിഷയത്തെക്കുറിച്ച് വിവരങ്ങൾ ഇല്ല. സാധാരണ കൃഷിരീതികൾ, വിള രോഗങ്ങൾ, അല്ലെങ്കിൽ മണ്ണിന്റെ ആരോഗ്യം എന്നിവയെക്കുറിച്ച് ചോദിക്കാവുന്നതാണ്.",
+      weatherResponse: "ഈ ആഴ്ച മിതമായ മഴ ലഭിക്കാൻ സാധ്യതയുണ്ട്. ഇത് നടീലിനും ജലസേചനത്തിനും മികച്ച സമയമാണ്. ഏറ്റവും കൃത്യമായ വിവരങ്ങൾക്കായി പ്രാദേശിക കാലാവസ്ഥാ റിപ്പോർട്ടുകൾ പരിശോധിക്കുക.",
+      fertilizerResponse: "ചോളത്തിന്, സസ്യ വളർച്ചയുടെ ഘട്ടത്തിൽ NPK വളം അത്യാവശ്യമാണ്. നിങ്ങളുടെ മണ്ണിന്റെ ആവശ്യങ്ങൾ കൃത്യമായി അറിയാൻ ഒരു മണ്ണ് പരിശോധന നടത്തുന്നത് നല്ലതാണ്.",
+      pestsResponse: "ചോളം പുഴു പോലുള്ള സാധാരണ കീടങ്ങളെ സംയോജിത കീടനിയന്ത്രണ തന്ത്രങ്ങൾ ഉപയോഗിച്ച് നിയന്ത്രിക്കാൻ കഴിയും. പ്രകൃതിദത്ത കീടനാശിനികളോ കുറഞ്ഞ അളവിലുള്ള രാസവളങ്ങളോ ഉപയോഗിക്കാവുന്നതാണ്.",
+      soilHealthResponse: "വിളവ് വർദ്ധിപ്പിക്കുന്നതിന് മണ്ണിന്റെ ആരോഗ്യം വളരെ പ്രധാനമാണ്. കമ്പോസ്റ്റ് പോലുള്ള ജൈവവളങ്ങൾ ചേർക്കുക, നോ-ടിൽ കൃഷിരീതികൾ ഉപയോഗിക്കുക, കവർ വിളകൾ വളർത്തുക എന്നിവ ചെയ്യാവുന്നതാണ്. മിക്ക വിളകൾക്കും അനുയോജ്യമായ മണ്ണിന്റെ പി.എച്ച് 6.0-നും 7.0-നും ഇടയിലാണ്.",
+    },
   }
 };
