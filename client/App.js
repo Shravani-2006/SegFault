@@ -538,7 +538,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: '#059669',
     position: 'absolute',
-    bottom: 4,
+    bottom: 0,
   },
   calendarDayEmpty: {
     width: '14.28%',
