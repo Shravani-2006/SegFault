@@ -8,12 +8,15 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
-  PermissionsAndroid,
   SafeAreaView,
+  // Imported for voice input UI
+  // ActivityIndicator,
+  // PermissionsAndroid,
+  // Animated,
 } from 'react-native';
 import * as Speech from 'expo-speech';
-import Voice from '@react-native-voice/voice';
+// import * as SpeechRecognition from 'jamsch-expo-speech-recognition';
+
 // A simple component for displaying a single chat message bubble
 const MessageBubble = ({ message, handleSpeakText, isSpeaking }) => {
   return (
@@ -47,11 +50,14 @@ const Chatbot = ({ t }) => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [hasPermission, setHasPermission] = useState(false);
-  const [isVoiceReady, setIsVoiceReady] = useState(false);
+  // State for voice input
+  // const [isListening, setIsListening] = useState(false);
+  // const [isRecognizing, setIsRecognizing] = useState(false);
+  // const [hasPermission, setHasPermission] = useState(false);
+  // const [isVoiceReady, setIsVoiceReady] = useState(false);
   const scrollViewRef = useRef(null);
-  const textInputRef = useRef(null); // Ref for the TextInput component
+  const textInputRef = useRef(null);
+  // const pulseAnim = useRef(new Animated.Value(1)).current;
 
   // Simulates a bot response to a user query
   const simulateBotResponse = (userQuery) => {
@@ -95,85 +101,92 @@ const Chatbot = ({ t }) => {
     });
   };
 
-  // Handles the request for microphone permission
-  const requestMicrophonePermission = async () => {
-    if (Platform.OS === 'android') {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-          {
-            title: 'Microphone Permission',
-            message: 'This app needs access to your microphone to enable voice input.',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
-          },
-        );
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
-      } catch (err) {
-        console.warn(err);
-        return false;
-      }
-    }
-    return true;
-  };
+  // // Handles the request for microphone permission
+  // const requestMicrophonePermission = async () => {
+  //   if (Platform.OS === 'android') {
+  //     try {
+  //       const granted = await PermissionsAndroid.request(
+  //         PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+  //         {
+  //           title: 'Microphone Permission',
+  //           message: 'This app needs access to your microphone to enable voice input.',
+  //           buttonNeutral: 'Ask Me Later',
+  //           buttonNegative: 'Cancel',
+  //           buttonPositive: 'OK',
+  //         },
+  //       );
+  //       return granted === PermissionsAndroid.RESULTS.GRANTED;
+  //     } catch (err) {
+  //       console.warn(err);
+  //       return false;
+  //     }
+  //   }
+  //   return true;
+  // };
 
-  // Initializes the voice recognition module and requests permission
-  useEffect(() => {
-    const initVoice = async () => {
-      const granted = await requestMicrophonePermission();
-      setHasPermission(granted);
+  // // Initializes the voice recognition module and requests permission
+  // useEffect(() => {
+  //   const initVoice = async () => {
+  //     const granted = await requestMicrophonePermission();
+  //     setHasPermission(granted);
+  //     setIsVoiceReady(granted);
+  //   };
 
-      if (granted) {
-        Voice.onSpeechStart = () => {
-          setIsListening(true);
-          setInputText('Listening...');
-        };
-        Voice.onSpeechEnd = () => setIsListening(false);
-        Voice.onSpeechResults = (event) => {
-          const recognized = event.value[0];
-          setInputText(recognized);
-          handleSendMessage(recognized);
-        };
-        Voice.onSpeechError = (event) => {
-          console.error('Speech recognition error:', event.error);
-          setIsListening(false);
-          setInputText('');
-        };
-      }
-      setIsVoiceReady(true);
-    };
+  //   initVoice();
 
-    initVoice();
+  //   // Set up listeners for the speech recognition events
+  //   const startListener = SpeechRecognition.addSpeechRecognitionListener("start", () => {
+  //     setIsListening(true);
+  //     setInputText(t.chat.listeningStatus);
+  //   });
 
-    return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
-    };
-  }, []);
+  //   const endListener = SpeechRecognition.addSpeechRecognitionListener("end", () => {
+  //     setIsListening(false);
+  //     setInputText('');
+  //   });
 
-  // Handles the voice input button press
-  const handleSpeechInput = async () => {
-    if (!hasPermission) {
-      console.log('Microphone permission denied.');
-      return;
-    }
-    
-    // Check if the Voice module is initialized before attempting to use it.
-    if (!Voice || !Voice.start) {
-      console.error('Voice module or its start method is not available. Please ensure the library is correctly linked and configured.');
-      return;
-    }
+  //   const resultListener = SpeechRecognition.addSpeechRecognitionListener("result", (event) => {
+  //     const recognized = event.value[0];
+  //     setInputText(recognized);
+  //     handleSendMessage(recognized);
+  //   });
 
-    if (isListening) {
-      await Voice.stop();
-    } else {
-      try {
-        await Voice.start('en-US');
-      } catch (e) {
-        console.error('Failed to start voice recognition:', e);
-      }
-    }
-  };
+  //   const errorListener = SpeechRecognition.addSpeechRecognitionListener("error", (event) => {
+  //     console.error('Speech recognition error:', event);
+  //     setIsListening(false);
+  //     setInputText('');
+  //   });
+
+  //   return () => {
+  //     // Clean up listeners on component unmount
+  //     startListener.remove();
+  //     endListener.remove();
+  //     resultListener.remove();
+  //     errorListener.remove();
+  //   };
+  // }, []);
+
+  // // Handles the voice input button press
+  // const handleSpeechInput = async () => {
+  //   if (!hasPermission || !isVoiceReady) {
+  //     console.log('Microphone permission denied or voice recognition not ready.');
+  //     return;
+  //   }
+
+  //   if (isListening) {
+  //     // Stop listening if already active
+  //     await SpeechRecognition.stopSpeechRecognitionAsync();
+  //     setIsListening(false);
+  //     setInputText('');
+  //   } else {
+  //     try {
+  //       // Start listening
+  //       await SpeechRecognition.startSpeechRecognitionAsync('en-US');
+  //     } catch (e) {
+  //       console.error('Failed to start voice recognition:', e);
+  //     }
+  //   }
+  // };
 
   // Scrolls to the bottom of the chat view when a new message is added
   useEffect(() => {
@@ -182,9 +195,34 @@ const Chatbot = ({ t }) => {
     }
   }, [messages]);
 
+  // // Handle pulsing animation for the microphone button
+  // useEffect(() => {
+  //   if (isListening) {
+  //     Animated.loop(
+  //       Animated.sequence([
+  //         Animated.timing(pulseAnim, {
+  //           toValue: 1.2,
+  //           duration: 500,
+  //           useNativeDriver: true,
+  //         }),
+  //         Animated.timing(pulseAnim, {
+  //           toValue: 1,
+  //           duration: 500,
+  //           useNativeDriver: true,
+  //         }),
+  //       ]),
+  //       { iterations: -1 }
+  //     ).start();
+  //   } else {
+  //     pulseAnim.stopAnimation();
+  //   }
+  // }, [isListening, pulseAnim]);
+
   // Automatically focus on the text input when the component mounts
   useEffect(() => {
-    textInputRef.current.focus();
+    if (textInputRef.current) {
+      textInputRef.current.focus();
+    }
   }, []);
 
   return (
@@ -192,6 +230,7 @@ const Chatbot = ({ t }) => {
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <ScrollView
           ref={scrollViewRef}
@@ -209,26 +248,18 @@ const Chatbot = ({ t }) => {
         </ScrollView>
 
         <View style={styles.inputArea}>
-          <TouchableOpacity
-            style={[styles.micButton, isListening && styles.micListening]}
-            onPress={handleSpeechInput}
-            disabled={!isVoiceReady}
+          {/* Mic button is now a placeholder */}
+          <View
+            style={[styles.micButton]}
           >
-            {!isVoiceReady ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : isListening ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.micText}>🎙️</Text>
-            )}
-          </TouchableOpacity>
+            <Text style={styles.micText}>🎙️</Text>
+          </View>
           <TextInput
             ref={textInputRef}
             style={styles.textInput}
             value={inputText}
             onChangeText={setInputText}
-            placeholder={isListening ? 'Listening...' : t.chat.inputPlaceholder}
-            editable={!isListening}
+            placeholder={t.chat.inputPlaceholder}
             onSubmitEditing={() => handleSendMessage(inputText)}
           />
           <TouchableOpacity
@@ -324,11 +355,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 10,
     backgroundColor: 'transparent',
-    // The following styles were removed as KeyboardAvoidingView handles them
-    // position: 'absolute',
-    // bottom: 0,
-    // left: 0,
-    // right: 0,
   },
   textInput: {
     flex: 1,
@@ -355,7 +381,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   micButton: {
-    backgroundColor: '#22c55e',
+    backgroundColor: '#ccc',
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -368,6 +394,7 @@ const styles = StyleSheet.create({
   },
   micText: {
     fontSize: 20,
+    color: '#fff',
   },
 });
 
