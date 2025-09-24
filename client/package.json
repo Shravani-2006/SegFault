@@ -9,15 +9,11 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "@jamsch/expo-speech-recognition": "^0.2.15",
-    "@react-native-community/voice": "^1.1.9",
-    "@react-native-voice/voice": "^3.2.4",
-    "expo": "~54.0.10",
+    "expo": "~54.0.9",
     "expo-speech": "~14.0.7",
     "expo-status-bar": "~3.0.8",
     "react": "19.1.0",
-    "react-native": "0.81.4",
-    "react-native-voice": "^0.3.0"
+    "react-native": "0.81.4"
   },
   "private": true
 }
