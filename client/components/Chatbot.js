@@ -8,11 +8,14 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
-  PermissionsAndroid,
+  SafeAreaView,
+  // Imported for voice input UI
+  // ActivityIndicator,
+  // PermissionsAndroid,
+  // Animated,
 } from 'react-native';
 import * as Speech from 'expo-speech';
-import Voice from '@react-native-voice/voice';
+// import * as SpeechRecognition from 'jamsch-expo-speech-recognition';
 
 // A simple component for displaying a single chat message bubble
 const MessageBubble = ({ message, handleSpeakText, isSpeaking }) => {
@@ -43,29 +46,32 @@ const MessageBubble = ({ message, handleSpeakText, isSpeaking }) => {
 };
 
 // The main application component
-const App = () => {
+const Chatbot = ({ t }) => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [hasPermission, setHasPermission] = useState(false);
-  const [isVoiceReady, setIsVoiceReady] = useState(false);
+  // State for voice input
+  // const [isListening, setIsListening] = useState(false);
+  // const [isRecognizing, setIsRecognizing] = useState(false);
+  // const [hasPermission, setHasPermission] = useState(false);
+  // const [isVoiceReady, setIsVoiceReady] = useState(false);
   const scrollViewRef = useRef(null);
-  const textInputRef = useRef(null); // Ref for the TextInput component
+  const textInputRef = useRef(null);
+  // const pulseAnim = useRef(new Animated.Value(1)).current;
 
   // Simulates a bot response to a user query
   const simulateBotResponse = (userQuery) => {
     const queryLower = userQuery.toLowerCase();
-    let botResponse = "I'm sorry, I don't have information on that topic. Please ask about common farming practices, crop diseases, or soil health.";
+    let botResponse = t.chat.defaultResponse;
 
     if (queryLower.includes('weather') || queryLower.includes('forecast')) {
-      botResponse = "The forecast for this week looks promising with moderate rainfall. It's an excellent time for planting and irrigation. Remember to check local weather reports for the most accurate data.";
+      botResponse = t.chat.weatherResponse;
     } else if (queryLower.includes('fertilizer') || queryLower.includes('nutrients')) {
-      botResponse = "For corn crops, a balanced NPK fertilizer is essential, especially during the vegetative stage. A soil test will give you the most accurate nutrient needs for your specific field.";
+      botResponse = t.chat.fertilizerResponse;
     } else if (queryLower.includes('pests') || queryLower.includes('insects')) {
-      botResponse = "Common pests like the corn earworm can be managed with integrated pest management (IPM) strategies. Consider using beneficial insects or targeted, low-impact pesticides.";
+      botResponse = t.chat.pestsResponse;
     } else if (queryLower.includes('soil health') || queryLower.includes('ph')) {
-      botResponse = "Improving soil health is key to a successful harvest. Try adding organic matter like compost, practicing no-till farming, and using cover crops. Ideal soil pH is between 6.0 and 7.0 for most crops.";
+      botResponse = t.chat.soilHealthResponse;
     }
 
     setTimeout(() => {
@@ -95,85 +101,92 @@ const App = () => {
     });
   };
 
-  // Handles the request for microphone permission
-  const requestMicrophonePermission = async () => {
-    if (Platform.OS === 'android') {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-          {
-            title: 'Microphone Permission',
-            message: 'This app needs access to your microphone to enable voice input.',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
-          },
-        );
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
-      } catch (err) {
-        console.warn(err);
-        return false;
-      }
-    }
-    return true;
-  };
+  // // Handles the request for microphone permission
+  // const requestMicrophonePermission = async () => {
+  //   if (Platform.OS === 'android') {
+  //     try {
+  //       const granted = await PermissionsAndroid.request(
+  //         PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+  //         {
+  //           title: 'Microphone Permission',
+  //           message: 'This app needs access to your microphone to enable voice input.',
+  //           buttonNeutral: 'Ask Me Later',
+  //           buttonNegative: 'Cancel',
+  //           buttonPositive: 'OK',
+  //         },
+  //       );
+  //       return granted === PermissionsAndroid.RESULTS.GRANTED;
+  //     } catch (err) {
+  //       console.warn(err);
+  //       return false;
+  //     }
+  //   }
+  //   return true;
+  // };
 
-  // Initializes the voice recognition module and requests permission
-  useEffect(() => {
-    const initVoice = async () => {
-      const granted = await requestMicrophonePermission();
-      setHasPermission(granted);
+  // // Initializes the voice recognition module and requests permission
+  // useEffect(() => {
+  //   const initVoice = async () => {
+  //     const granted = await requestMicrophonePermission();
+  //     setHasPermission(granted);
+  //     setIsVoiceReady(granted);
+  //   };
 
-      if (granted) {
-        Voice.onSpeechStart = () => {
-          setIsListening(true);
-          setInputText('Listening...');
-        };
-        Voice.onSpeechEnd = () => setIsListening(false);
-        Voice.onSpeechResults = (event) => {
-          const recognized = event.value[0];
-          setInputText(recognized);
-          handleSendMessage(recognized);
-        };
-        Voice.onSpeechError = (event) => {
-          console.error('Speech recognition error:', event.error);
-          setIsListening(false);
-          setInputText('');
-        };
-      }
-      setIsVoiceReady(true);
-    };
+  //   initVoice();
 
-    initVoice();
+  //   // Set up listeners for the speech recognition events
+  //   const startListener = SpeechRecognition.addSpeechRecognitionListener("start", () => {
+  //     setIsListening(true);
+  //     setInputText(t.chat.listeningStatus);
+  //   });
 
-    return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
-    };
-  }, []);
+  //   const endListener = SpeechRecognition.addSpeechRecognitionListener("end", () => {
+  //     setIsListening(false);
+  //     setInputText('');
+  //   });
 
-  // Handles the voice input button press
-  const handleSpeechInput = async () => {
-    if (!hasPermission) {
-      console.log('Microphone permission denied.');
-      return;
-    }
-    
-    // Check if the Voice module is initialized before attempting to use it.
-    if (!Voice || !Voice.start) {
-      console.error('Voice module or its start method is not available. Please ensure the library is correctly linked and configured.');
-      return;
-    }
+  //   const resultListener = SpeechRecognition.addSpeechRecognitionListener("result", (event) => {
+  //     const recognized = event.value[0];
+  //     setInputText(recognized);
+  //     handleSendMessage(recognized);
+  //   });
 
-    if (isListening) {
-      await Voice.stop();
-    } else {
-      try {
-        await Voice.start('en-US');
-      } catch (e) {
-        console.error('Failed to start voice recognition:', e);
-      }
-    }
-  };
+  //   const errorListener = SpeechRecognition.addSpeechRecognitionListener("error", (event) => {
+  //     console.error('Speech recognition error:', event);
+  //     setIsListening(false);
+  //     setInputText('');
+  //   });
+
+  //   return () => {
+  //     // Clean up listeners on component unmount
+  //     startListener.remove();
+  //     endListener.remove();
+  //     resultListener.remove();
+  //     errorListener.remove();
+  //   };
+  // }, []);
+
+  // // Handles the voice input button press
+  // const handleSpeechInput = async () => {
+  //   if (!hasPermission || !isVoiceReady) {
+  //     console.log('Microphone permission denied or voice recognition not ready.');
+  //     return;
+  //   }
+
+  //   if (isListening) {
+  //     // Stop listening if already active
+  //     await SpeechRecognition.stopSpeechRecognitionAsync();
+  //     setIsListening(false);
+  //     setInputText('');
+  //   } else {
+  //     try {
+  //       // Start listening
+  //       await SpeechRecognition.startSpeechRecognitionAsync('en-US');
+  //     } catch (e) {
+  //       console.error('Failed to start voice recognition:', e);
+  //     }
+  //   }
+  // };
 
   // Scrolls to the bottom of the chat view when a new message is added
   useEffect(() => {
@@ -182,94 +195,93 @@ const App = () => {
     }
   }, [messages]);
 
+  // // Handle pulsing animation for the microphone button
+  // useEffect(() => {
+  //   if (isListening) {
+  //     Animated.loop(
+  //       Animated.sequence([
+  //         Animated.timing(pulseAnim, {
+  //           toValue: 1.2,
+  //           duration: 500,
+  //           useNativeDriver: true,
+  //         }),
+  //         Animated.timing(pulseAnim, {
+  //           toValue: 1,
+  //           duration: 500,
+  //           useNativeDriver: true,
+  //         }),
+  //       ]),
+  //       { iterations: -1 }
+  //     ).start();
+  //   } else {
+  //     pulseAnim.stopAnimation();
+  //   }
+  // }, [isListening, pulseAnim]);
+
   // Automatically focus on the text input when the component mounts
   useEffect(() => {
-    textInputRef.current.focus();
+    if (textInputRef.current) {
+      textInputRef.current.focus();
+    }
   }, []);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={styles.header}>
-        <Text style={styles.headerEmoji}>🌾</Text>
-        <Text style={styles.headerText}>Farmer's Assistant</Text>
-      </View>
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.chatArea}
-        contentContainerStyle={[styles.chatContentContainer, { flexGrow: 1, justifyContent: 'flex-end' }]}
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        {messages.length === 0 && (
-          <Text style={styles.initialMessage}>
-            Hi there! I am your AI farming assistant. Ask me anything about crops, soil, pests, or weather.
-          </Text>
-        )}
-        {messages.map((message) => (
-          <MessageBubble key={message.id} message={message} handleSpeakText={handleSpeakText} isSpeaking={isSpeaking} />
-        ))}
-      </ScrollView>
-      <View style={styles.inputArea}>
-        {isListening && <Text style={styles.listeningIndicator}>Listening...</Text>}
-        <TextInput
-          ref={textInputRef} // Ref added here
-          style={styles.textInput}
-          value={inputText}
-          onChangeText={setInputText}
-          placeholder={isListening ? '...' : 'Type your question...'}
-          editable={!isListening}
-          returnKeyType="send"
-          onSubmitEditing={() => handleSendMessage(inputText)}
-        />
-        <TouchableOpacity
-          style={[styles.micButton, isListening && styles.micListening]}
-          onPress={handleSpeechInput}
-          disabled={!isVoiceReady}
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.chatArea}
+          contentContainerStyle={styles.chatContentContainer}
         >
-          {!isVoiceReady ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : isListening ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.micText}>🎙️</Text>
+          {messages.length === 0 && (
+            <Text style={styles.initialMessage}>
+              {t.chat.welcomeMessage}
+            </Text>
           )}
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.sendButton} onPress={() => handleSendMessage(inputText)}>
-          <Text style={styles.sendButtonText}>➔</Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+          {messages.map((message) => (
+            <MessageBubble key={message.id} message={message} handleSpeakText={handleSpeakText} isSpeaking={isSpeaking} />
+          ))}
+        </ScrollView>
+
+        <View style={styles.inputArea}>
+          {/* Mic button is now a placeholder */}
+          <View
+            style={[styles.micButton]}
+          >
+            <Text style={styles.micText}>🎙️</Text>
+          </View>
+          <TextInput
+            ref={textInputRef}
+            style={styles.textInput}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder={t.chat.inputPlaceholder}
+            onSubmitEditing={() => handleSendMessage(inputText)}
+          />
+          <TouchableOpacity
+            style={styles.sendButton}
+            onPress={() => handleSendMessage(inputText)}
+          >
+            <Text style={styles.sendButtonText}>➔</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f0fdf4',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#166534',
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    paddingTop: 48,
-    borderBottomRightRadius: 20,
-    borderBottomLeftRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  headerEmoji: {
-    fontSize: 24,
-    marginRight: 8,
-  },
-  headerText: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 'bold',
+    backgroundColor: '#f0fdf4',
   },
   chatArea: {
     flex: 1,
@@ -277,12 +289,22 @@ const styles = StyleSheet.create({
   },
   chatContentContainer: {
     paddingBottom: 20,
+    flexGrow: 1, // Allows the content to grow and push to the bottom
+    justifyContent: 'flex-end', // Aligns content to the bottom
   },
   initialMessage: {
     textAlign: 'center',
-    color: '#71717a',
+    color: '#4b5563',
     fontStyle: 'italic',
     padding: 20,
+    marginTop: 20,
+    borderRadius: 16,
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   messageContainer: {
     flexDirection: 'row',
@@ -306,18 +328,24 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   botMessageBubble: {
-    backgroundColor: '#e5e7eb',
+    backgroundColor: 'white',
     borderBottomLeftRadius: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   messageText: {
     fontSize: 16,
+    color: '#333',
   },
   speakButton: {
     marginLeft: 8,
   },
   speakButtonText: {
     fontSize: 20,
-    color: '#4b5563',
+    color: '#047857',
   },
   pulsatingText: {
     opacity: 0.5,
@@ -326,28 +354,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  listeningIndicator: {
-    position: 'absolute',
-    top: 0,
-    left: 15,
-    fontSize: 12,
-    color: '#ef4444',
+    backgroundColor: 'transparent',
   },
   textInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 24,
-    paddingVertical: 10,
+    borderColor: '#d1d5db',
+    borderRadius: 25,
+    paddingVertical: 12,
     paddingHorizontal: 16,
     marginRight: 8,
+    backgroundColor: 'white',
   },
   sendButton: {
-    backgroundColor: '#16a34a',
+    backgroundColor: '#047857',
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -361,19 +381,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   micButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#ccc',
     width: 44,
     height: 44,
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 8,
   },
   micListening: {
     backgroundColor: '#ef4444',
   },
   micText: {
     fontSize: 20,
+    color: '#fff',
   },
 });
 
-export default App;
+export default Chatbot;
