@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text } from 'react-native';
-import Card from './Card';
+import { View, Text, Image } from 'react-native';
+import Card from './Card'; // Assuming Card component is in the same folder or path is correct
 
 const Crops = ({ crops, t, translateText, styles, pulseAnim }) => {
   return (
@@ -9,7 +9,11 @@ const Crops = ({ crops, t, translateText, styles, pulseAnim }) => {
       {crops.map(crop => (
         <Card key={crop.id} title={translateText(crop.name)} styles={styles} pulseAnim={pulseAnim}>
           <View style={styles.cropItem}>
-            <View style={styles.cropImagePlaceholder} />
+            {/* This line is already correct for local images */}
+            <Image
+              source={crop.imageUrl}
+              style={styles.cropImagePlaceholder}
+            />
             <View>
               <Text style={styles.cropText}>{t.plantingDate}: {crop.plantingDate}</Text>
               <Text style={styles.cropText}>{t.status}: {translateText(crop.status)}</Text>

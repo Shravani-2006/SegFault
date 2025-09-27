@@ -11,13 +11,35 @@ export const initialAlerts = [
 ];
 
 export const initialCrops = [
-  { id: 1, name: 'Corn', plantingDate: '2025-03-15', status: 'Growing' },
-  { id: 2, name: 'Soybeans', plantingDate: '2025-04-20', status: 'Flowering' },
-  { id: 3, name: 'Wheat', plantingDate: '2025-10-01', status: 'Harvesting' },
+  {
+    id: 1,
+    name: 'Paddy',
+    plantingDate: '2025-06-05',
+    status: 'Harvesting',
+    // Correct path: only one level up
+    imageUrl: require('../assets/CropImages/Paddy.png')
+  },
+  {
+    id: 2,
+    name: 'Rubber',
+    plantingDate: '2018-06-20',
+    status: 'Tapping',
+    imageUrl: require('../assets/CropImages/Rubber.png')
+  },
+  {
+    id: 3,
+    name: 'Coconut',
+    plantingDate: '2020-05-15',
+    status: 'Flowering',
+    imageUrl: require('../assets/CropImages/Coconut.png')
+  },
 ];
 
 export const calendarEvents = [
-  { date: '2025-09-25', event: 'Harvest Corn', type: 'harvest' },
-  { date: '2025-10-01', event: 'Plant Wheat', type: 'planting' },
-  { date: '2025-10-10', event: 'Soil testing', type: 'maintenance' },
+  { date: '2025-09-28', event: 'Complete Paddy Harvest (Virippu season)', type: 'harvest' },
+  { date: '2025-10-15', event: 'Apply fertilizer for Coconut palms', type: 'maintenance' },
+  { date: '2025-10-25', event: 'Prepare fields for second Paddy crop (Mundakan season)', type: 'preparation' },
+  { date: '2025-11-05', event: 'Begin planting Mundakan Paddy', type: 'planting' },
+  { date: '2025-11-20', event: 'Check for pests in Rubber plantation', type: 'maintenance' },
 ];
+
