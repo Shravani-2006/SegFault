@@ -53,6 +53,7 @@ const MessageBubble = ({ message, handleSpeakText, isSpeaking, showAvatar }) => 
   );
 };
 
+
 // The main application component
 const Chatbot = ({ t }) => {
   const [messages, setMessages] = useState([]);
