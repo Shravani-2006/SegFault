@@ -6,41 +6,49 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  KeyboardAvoidingView,
   Platform,
   SafeAreaView,
-  // Imported for voice input UI
-  // ActivityIndicator,
-  // PermissionsAndroid,
-  // Animated,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import * as Speech from 'expo-speech';
-// import * as SpeechRecognition from 'jamsch-expo-speech-recognition';
+import { FontAwesome5 } from '@expo/vector-icons';
 
 // A simple component for displaying a single chat message bubble
-const MessageBubble = ({ message, handleSpeakText, isSpeaking }) => {
+const MessageBubble = ({ message, handleSpeakText, isSpeaking, showAvatar }) => {
   return (
-    <View
-      style={[
-        styles.messageContainer,
-        message.sender === 'user' ? styles.userMessageContainer : styles.botMessageContainer,
-      ]}
-    >
+    <View style={styles.messageRow}>
+      {message.sender === 'bot' && showAvatar && (
+        <View style={styles.avatarContainer}>
+          <FontAwesome5 name="robot" style={styles.avatarIcon} />
+        </View>
+      )}
       <View
         style={[
-          styles.messageBubble,
-          message.sender === 'user' ? styles.userMessageBubble : styles.botMessageBubble,
+          styles.messageContainer,
+          message.sender === 'user' ? styles.userMessageContainer : styles.botMessageContainer,
         ]}
       >
-        <Text style={styles.messageText}>{message.text}</Text>
-        {message.sender === 'bot' && (
-          <TouchableOpacity onPress={() => handleSpeakText(message.text)} disabled={isSpeaking} style={styles.speakButton}>
-            <Text style={[styles.speakButtonText, isSpeaking && styles.pulsatingText]}>
-              <Text>🔊</Text>
-            </Text>
-          </TouchableOpacity>
-        )}
+        <View
+          style={[
+            styles.messageBubble,
+            message.sender === 'user' ? styles.userMessageBubble : styles.botMessageBubble,
+          ]}
+        >
+          <Text style={styles.messageText}>{message.text}</Text>
+          {message.sender === 'bot' && (
+            <TouchableOpacity onPress={() => handleSpeakText(message.text)} disabled={isSpeaking} style={styles.speakButton}>
+              <FontAwesome5 name="volume-up" style={[styles.speakButtonIcon, isSpeaking && styles.pulsatingIcon]} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
+       {message.sender === 'user' && showAvatar && (
+        <Image
+          source={require('../assets/CropImages/farmer.png')} // Use local asset
+          style={styles.avatarImage}
+        />
+      )}
     </View>
   );
 };
@@ -50,36 +58,53 @@ const Chatbot = ({ t }) => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
-  // State for voice input
-  // const [isListening, setIsListening] = useState(false);
-  // const [isRecognizing, setIsRecognizing] = useState(false);
-  // const [hasPermission, setHasPermission] = useState(false);
-  // const [isVoiceReady, setIsVoiceReady] = useState(false);
+  const [isBotTyping, setIsBotTyping] = useState(false);
   const scrollViewRef = useRef(null);
   const textInputRef = useRef(null);
-  // const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  // Set initial conversation once translations are available
+  useEffect(() => {
+    if (t && t.chat) {
+        setMessages([
+            { id: 1, text: "Hi there! I am your AI farming assistant. Ask me anything about crops, soil, pests, or weather.", sender: 'bot' },
+            { id: 2, text: "What's the weather forecast for tomorrow?", sender: 'user' },
+            {
+              id: 3,
+              text: t.chat.weatherResponse,
+              sender: 'bot',
+              quickReplies: ["Tell me more", "Pest forecast?", "Thanks!"]
+            }
+        ]);
+    }
+  }, [t]);
+
 
   // Simulates a bot response to a user query
   const simulateBotResponse = (userQuery) => {
     const queryLower = userQuery.toLowerCase();
-    let botResponse = t.chat.defaultResponse;
+    let botResponse = { text: t.chat.defaultResponse, quickReplies: [] };
 
     if (queryLower.includes('weather') || queryLower.includes('forecast')) {
-      botResponse = t.chat.weatherResponse;
+      botResponse = {
+          text: t.chat.weatherResponse,
+          quickReplies: ["Tell me more", "Pest forecast?", "Thanks!"]
+      };
     } else if (queryLower.includes('fertilizer') || queryLower.includes('nutrients')) {
-      botResponse = t.chat.fertilizerResponse;
+      botResponse.text = t.chat.fertilizerResponse;
     } else if (queryLower.includes('pests') || queryLower.includes('insects')) {
-      botResponse = t.chat.pestsResponse;
+      botResponse.text = t.chat.pestsResponse;
     } else if (queryLower.includes('soil health') || queryLower.includes('ph')) {
-      botResponse = t.chat.soilHealthResponse;
+      botResponse.text = t.chat.soilHealthResponse;
     }
 
+    setIsBotTyping(true);
     setTimeout(() => {
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { id: Date.now() + 1, text: botResponse, sender: 'bot' },
-      ]);
-    }, 1000);
+        setIsBotTyping(false);
+        setMessages((prevMessages) => [
+            ...prevMessages,
+            { id: Date.now() + 1, text: botResponse.text, sender: 'bot', quickReplies: botResponse.quickReplies },
+        ]);
+    }, 1500); // Simulate typing delay
   };
 
   // Handles sending a text message
@@ -93,309 +118,138 @@ const Chatbot = ({ t }) => {
 
   // Handles text-to-speech for bot responses
   const handleSpeakText = async (text) => {
-    if (isSpeaking) return;
+    if (isSpeaking) {
+        await Speech.stop();
+    }
     setIsSpeaking(true);
-    await Speech.speak(text, {
-      onDone: () => setIsSpeaking(false),
-      onError: () => setIsSpeaking(false),
+    Speech.speak(text, {
+        onDone: () => setIsSpeaking(false),
+        onError: () => setIsSpeaking(false),
     });
   };
-
-  // // Handles the request for microphone permission
-  // const requestMicrophonePermission = async () => {
-  //   if (Platform.OS === 'android') {
-  //     try {
-  //       const granted = await PermissionsAndroid.request(
-  //         PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-  //         {
-  //           title: 'Microphone Permission',
-  //           message: 'This app needs access to your microphone to enable voice input.',
-  //           buttonNeutral: 'Ask Me Later',
-  //           buttonNegative: 'Cancel',
-  //           buttonPositive: 'OK',
-  //         },
-  //       );
-  //       return granted === PermissionsAndroid.RESULTS.GRANTED;
-  //     } catch (err) {
-  //       console.warn(err);
-  //       return false;
-  //     }
-  //   }
-  //   return true;
-  // };
-
-  // // Initializes the voice recognition module and requests permission
-  // useEffect(() => {
-  //   const initVoice = async () => {
-  //     const granted = await requestMicrophonePermission();
-  //     setHasPermission(granted);
-  //     setIsVoiceReady(granted);
-  //   };
-
-  //   initVoice();
-
-  //   // Set up listeners for the speech recognition events
-  //   const startListener = SpeechRecognition.addSpeechRecognitionListener("start", () => {
-  //     setIsListening(true);
-  //     setInputText(t.chat.listeningStatus);
-  //   });
-
-  //   const endListener = SpeechRecognition.addSpeechRecognitionListener("end", () => {
-  //     setIsListening(false);
-  //     setInputText('');
-  //   });
-
-  //   const resultListener = SpeechRecognition.addSpeechRecognitionListener("result", (event) => {
-  //     const recognized = event.value[0];
-  //     setInputText(recognized);
-  //     handleSendMessage(recognized);
-  //   });
-
-  //   const errorListener = SpeechRecognition.addSpeechRecognitionListener("error", (event) => {
-  //     console.error('Speech recognition error:', event);
-  //     setIsListening(false);
-  //     setInputText('');
-  //   });
-
-  //   return () => {
-  //     // Clean up listeners on component unmount
-  //     startListener.remove();
-  //     endListener.remove();
-  //     resultListener.remove();
-  //     errorListener.remove();
-  //   };
-  // }, []);
-
-  // // Handles the voice input button press
-  // const handleSpeechInput = async () => {
-  //   if (!hasPermission || !isVoiceReady) {
-  //     console.log('Microphone permission denied or voice recognition not ready.');
-  //     return;
-  //   }
-
-  //   if (isListening) {
-  //     // Stop listening if already active
-  //     await SpeechRecognition.stopSpeechRecognitionAsync();
-  //     setIsListening(false);
-  //     setInputText('');
-  //   } else {
-  //     try {
-  //       // Start listening
-  //       await SpeechRecognition.startSpeechRecognitionAsync('en-US');
-  //     } catch (e) {
-  //       console.error('Failed to start voice recognition:', e);
-  //     }
-  //   }
-  // };
 
   // Scrolls to the bottom of the chat view when a new message is added
   useEffect(() => {
     if (scrollViewRef.current) {
       scrollViewRef.current.scrollToEnd({ animated: true });
     }
-  }, [messages]);
+  }, [messages, isBotTyping]);
 
-  // // Handle pulsing animation for the microphone button
-  // useEffect(() => {
-  //   if (isListening) {
-  //     Animated.loop(
-  //       Animated.sequence([
-  //         Animated.timing(pulseAnim, {
-  //           toValue: 1.2,
-  //           duration: 500,
-  //           useNativeDriver: true,
-  //         }),
-  //         Animated.timing(pulseAnim, {
-  //           toValue: 1,
-  //           duration: 500,
-  //           useNativeDriver: true,
-  //         }),
-  //       ]),
-  //       { iterations: -1 }
-  //     ).start();
-  //   } else {
-  //     pulseAnim.stopAnimation();
-  //   }
-  // }, [isListening, pulseAnim]);
-
-  // Automatically focus on the text input when the component mounts
-  useEffect(() => {
-    if (textInputRef.current) {
-      textInputRef.current.focus();
-    }
-  }, []);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    <View style={styles.container}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.chatArea}
+        contentContainerStyle={styles.chatContentContainer}
       >
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.chatArea}
-          contentContainerStyle={styles.chatContentContainer}
-        >
-          {messages.length === 0 && (
-            <Text style={styles.initialMessage}>
-              {t.chat.welcomeMessage}
-            </Text>
-          )}
-          {messages.map((message) => (
-            <MessageBubble key={message.id} message={message} handleSpeakText={handleSpeakText} isSpeaking={isSpeaking} />
-          ))}
-        </ScrollView>
-
-        <View style={styles.inputArea}>
-          {/* Mic button is now a placeholder */}
-          <View
-            style={[styles.micButton]}
-          >
-            <Text style={styles.micText}>🎙️</Text>
-          </View>
-          <TextInput
-            ref={textInputRef}
-            style={styles.textInput}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder={t.chat.inputPlaceholder}
-            onSubmitEditing={() => handleSendMessage(inputText)}
+        {messages.map((message, index) => (
+           <MessageBubble
+              key={message.id}
+              message={message}
+              handleSpeakText={handleSpeakText}
+              isSpeaking={isSpeaking}
+              showAvatar={index === 0 || messages[index-1].sender !== message.sender}
           />
-          <TouchableOpacity
-            style={styles.sendButton}
-            onPress={() => handleSendMessage(inputText)}
-          >
-            <Text style={styles.sendButtonText}>➔</Text>
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        ))}
+        {isBotTyping && (
+            <View style={[styles.messageRow, styles.botMessageContainer]}>
+               <View style={styles.avatarContainer}>
+                  <FontAwesome5 name="robot" style={styles.avatarIcon} />
+               </View>
+               <View style={[styles.messageBubble, styles.botMessageBubble, styles.typingBubble]}>
+                  <ActivityIndicator size="small" color="#047857" />
+               </View>
+            </View>
+        )}
+      </ScrollView>
+      <View>
+          {messages[messages.length-1]?.sender === 'bot' && messages[messages.length-1]?.quickReplies && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickReplyContainer}>
+                  {messages[messages.length-1].quickReplies.map((reply, index) => (
+                      <TouchableOpacity key={index} style={styles.quickReplyButton} onPress={() => handleSendMessage(reply)}>
+                          <Text style={styles.quickReplyText}>{reply}</Text>
+                      </TouchableOpacity>
+                  ))}
+              </ScrollView>
+          )}
+      </View>
+
+      <View style={styles.inputArea}>
+        <TouchableOpacity style={styles.micButton}>
+           <FontAwesome5 name="microphone" style={styles.micIcon} />
+        </TouchableOpacity>
+        <TextInput
+          ref={textInputRef}
+          style={styles.textInput}
+          value={inputText}
+          onChangeText={setInputText}
+          placeholder={t.chat.inputPlaceholder}
+          onSubmitEditing={() => handleSendMessage(inputText)}
+        />
+        <TouchableOpacity
+          style={styles.sendButton}
+          onPress={() => handleSendMessage(inputText)}
+        >
+          <FontAwesome5 name="arrow-up" style={styles.sendButtonIcon} />
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f0fdf4',
+  container: { height: 350, backgroundColor: '#f0fdf4', flex: 1 },
+  chatArea: { flex: 1 },
+  chatContentContainer: { padding: 10, flexGrow: 1, justifyContent: 'flex-end' },
+  messageRow: { flexDirection: 'row', marginBottom: 12, alignItems: 'flex-end' },
+  avatarContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#e5e7eb',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 5,
   },
-  container: {
-    flex: 1,
-    backgroundColor: '#f0fdf4',
+  avatarImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginHorizontal: 5,
   },
-  chatArea: {
-    flex: 1,
-    padding: 10,
-  },
-  chatContentContainer: {
-    paddingBottom: 20,
-    flexGrow: 1, // Allows the content to grow and push to the bottom
-    justifyContent: 'flex-end', // Aligns content to the bottom
-  },
-  initialMessage: {
-    textAlign: 'center',
+  avatarIcon: {
+    fontSize: 18,
     color: '#4b5563',
-    fontStyle: 'italic',
-    padding: 20,
-    marginTop: 20,
-    borderRadius: 16,
-    backgroundColor: 'white',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
   },
-  messageContainer: {
-    flexDirection: 'row',
-    marginBottom: 8,
+  userMessageContainer: { alignItems: 'flex-end', flex: 1 },
+  botMessageContainer: { alignItems: 'flex-start', flex: 1 },
+  messageBubble: { padding: 14, borderRadius: 20, maxWidth: '85%', flexDirection: 'row', alignItems: 'center' },
+  userMessageBubble: { backgroundColor: '#dcfce7', borderBottomRightRadius: 5 },
+  botMessageBubble: { backgroundColor: 'white', borderBottomLeftRadius: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
+  messageText: { fontSize: 16, color: '#333', flexShrink: 1 },
+  typingBubble: { padding: 14, width: 70, alignItems: 'center' },
+  speakButton: { marginLeft: 10, padding: 2 },
+  speakButtonIcon: { fontSize: 16, color: '#047857' },
+  pulsatingIcon: { opacity: 0.5 },
+  inputArea: { flexDirection: 'row', alignItems: 'center', padding: 10, borderTopWidth: 1, borderColor: '#e5e7eb' },
+  textInput: { flex: 1, borderWidth: 1, borderColor: '#d1d5db', borderRadius: 25, paddingVertical: 10, paddingHorizontal: 16, backgroundColor: '#f9fafb' },
+  sendButton: { backgroundColor: '#059669', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginLeft: 8 },
+  sendButtonIcon: { color: '#fff', fontSize: 16 },
+  micButton: { backgroundColor: '#e5e7eb', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginRight: 8 },
+  micIcon: { fontSize: 16, color: '#4b5563' },
+  quickReplyContainer: { paddingHorizontal: 10, paddingVertical: 8 },
+  quickReplyButton: {
+      backgroundColor: 'white',
+      borderColor: '#a7f3d0',
+      borderWidth: 1,
+      borderRadius: 20,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      marginRight: 8,
   },
-  userMessageContainer: {
-    justifyContent: 'flex-end',
-  },
-  botMessageContainer: {
-    justifyContent: 'flex-start',
-  },
-  messageBubble: {
-    padding: 12,
-    borderRadius: 16,
-    maxWidth: '80%',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  userMessageBubble: {
-    backgroundColor: '#dcfce7',
-    borderBottomRightRadius: 4,
-  },
-  botMessageBubble: {
-    backgroundColor: 'white',
-    borderBottomLeftRadius: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  messageText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  speakButton: {
-    marginLeft: 8,
-  },
-  speakButtonText: {
-    fontSize: 20,
-    color: '#047857',
-  },
-  pulsatingText: {
-    opacity: 0.5,
-  },
-  inputArea: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    backgroundColor: 'transparent',
-  },
-  textInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 25,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginRight: 8,
-    backgroundColor: 'white',
-  },
-  sendButton: {
-    backgroundColor: '#047857',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
-  },
-  sendButtonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  micButton: {
-    backgroundColor: '#ccc',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  micListening: {
-    backgroundColor: '#ef4444',
-  },
-  micText: {
-    fontSize: 20,
-    color: '#fff',
-  },
+  quickReplyText: { color: '#065f46', fontWeight: '500' },
 });
 
 export default Chatbot;
+
